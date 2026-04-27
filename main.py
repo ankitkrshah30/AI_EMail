@@ -82,42 +82,51 @@ def check_emails_and_draft():
     print(f"Found {len(messages)} new messages. Processing...")
 
     for message in messages:
-        msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-        
-        headers = msg['payload']['headers']
-        subject = next((h['value'] for h in headers if h['name'].lower() == 'subject'), "No Subject")
-        sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), "Unknown Sender")
-        
-        # --- NEW: Skip automated or no-reply emails ---
-        if "no-reply" in sender.lower() or "noreply" in sender.lower() or "newsletter" in sender.lower():
-            print(f"Skipping automated/no-reply email from: {sender}")
+        try:
+            msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+            
+            headers = msg['payload']['headers']
+            subject = next((h['value'] for h in headers if h['name'].lower() == 'subject'), "No Subject")
+            sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), "Unknown Sender")
+            
+            # Skip automated or no-reply emails
+            if "no-reply" in sender.lower() or "noreply" in sender.lower() or "newsletter" in sender.lower():
+                print(f"Skipping automated email from: {sender}")
+                service.users().messages().modify(
+                    userId='me', id=message['id'], body={'removeLabelIds': ['UNREAD']}
+                ).execute()
+                continue
+
+            body = msg.get('snippet', '')
+            print(f"Processing email from: {sender}")
+
+            # Generate the AI Response
+            ai_response = generate_ai_draft(body)
+
+            # Create the Draft
+            message_draft = EmailMessage()
+            message_draft.set_content(ai_response)
+            message_draft['To'] = sender
+            message_draft['Subject'] = f"Re: {subject}"
+            
+            encoded_message = base64.urlsafe_b64encode(message_draft.as_bytes()).decode()
+            create_message = {'message': {'raw': encoded_message}}
+            
+            service.users().drafts().create(userId='me', body=create_message).execute()
+            print("Draft created successfully!")
+
+            # Mark as read
             service.users().messages().modify(
                 userId='me', id=message['id'], body={'removeLabelIds': ['UNREAD']}
             ).execute()
-            continue
+            
+            # --- THE MAGIC FIX: Give Gemini 4 seconds to breathe ---
+            time.sleep(4) 
 
-        body = msg.get('snippet', '')
-        print(f"Processing email from: {sender}")
-
-        # Generate the AI Response
-        ai_response = generate_ai_draft(body)
-
-        # Create the Draft
-        message_draft = EmailMessage()
-        message_draft.set_content(ai_response)
-        message_draft['To'] = sender
-        message_draft['Subject'] = f"Re: {subject}"
-        
-        encoded_message = base64.urlsafe_b64encode(message_draft.as_bytes()).decode()
-        create_message = {'message': {'raw': encoded_message}}
-        
-        service.users().drafts().create(userId='me', body=create_message).execute()
-        print("Draft created successfully!")
-
-        # Mark as read
-        service.users().messages().modify(
-            userId='me', id=message['id'], body={'removeLabelIds': ['UNREAD']}
-        ).execute()
+        except Exception as e:
+            print(f"Error processing a specific email from {sender}: {e}")
+            # If an email fails (like a rate limit), we pause for 10 seconds before trying the next one
+            time.sleep(10)
 
 from flask import Flask
 import threading
