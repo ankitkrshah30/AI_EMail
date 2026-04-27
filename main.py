@@ -6,6 +6,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+import json
 
 # 1. The NEW updated Gemini package
 from google import genai
@@ -23,6 +24,19 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 def get_gmail_service():
     """Authenticates and connects to Gmail."""
     creds = None
+    
+    # 1. CLOUD MODE: If running on Render, read from Environment Variables
+    token_env = os.environ.get("GMAIL_TOKEN")
+    if token_env:
+        print("Using cloud environment variables for Gmail login...")
+        token_dict = json.loads(token_env)
+        creds = Credentials.from_authorized_user_info(token_dict, SCOPES)
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        return build('gmail', 'v1', credentials=creds)
+        
+    # 2. LOCAL MODE: If running on your laptop, read the file
+    print("Using local files for Gmail login...")
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     if not creds or not creds.valid:
@@ -33,6 +47,7 @@ def get_gmail_service():
             creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
+            
     return build('gmail', 'v1', credentials=creds)
 
 def generate_ai_draft(email_content):
