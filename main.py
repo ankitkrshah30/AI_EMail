@@ -104,9 +104,17 @@ def check_emails_and_draft():
             userId='me', id=message['id'], body={'removeLabelIds': ['UNREAD']}
         ).execute()
 
-# --- THE CONTINUOUS LOOP ---
-if __name__ == '__main__':
-    print("Starting Email AI Assistant...")
+from flask import Flask
+import threading
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Email AI Assistant is awake and running!"
+
+def run_email_loop():
+    print("Starting Email AI Assistant background loop...")
     while True:
         try:
             check_emails_and_draft()
@@ -114,4 +122,13 @@ if __name__ == '__main__':
             print(f"An error occurred: {e}")
         
         print("Sleeping for 5 minutes...")
-        time.sleep(30)
+        time.sleep(300)
+
+if __name__ == '__main__':
+    # Start the email checker in a background thread
+    thread = threading.Thread(target=run_email_loop)
+    thread.daemon = True
+    thread.start()
+    
+    # Start the web server to keep Render happy
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
