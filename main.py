@@ -72,7 +72,7 @@ def check_emails_and_draft():
     service = get_gmail_service()
     
     # Search for Unread Emails in the Inbox
-    results = service.users().messages().list(userId='me', labelIds=['INBOX', 'UNREAD'], maxResults=5).execute()
+    results = service.users().messages().list(userId='me', labelIds=['INBOX', 'UNREAD'], maxResults=3).execute()
     messages = results.get('messages', [])
 
     if not messages:
@@ -121,8 +121,8 @@ def check_emails_and_draft():
             ).execute()
             
             # --- THE SPEED GOVERNOR ---
-            print("Taking a 15-second breather to respect Google's AI rate limits...")
-            time.sleep(15) 
+            print("Taking a 20-second breather to respect Google's AI rate limits...")
+            time.sleep(20) 
 
         except Exception as e:
             print(f"Error processing a specific email from {sender}: {e}")
