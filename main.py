@@ -120,13 +120,15 @@ def check_emails_and_draft():
                 userId='me', id=message['id'], body={'removeLabelIds': ['UNREAD']}
             ).execute()
             
-            # --- THE MAGIC FIX: Give Gemini 4 seconds to breathe ---
-            time.sleep(4) 
+            # --- THE SPEED GOVERNOR ---
+            print("Taking a 15-second breather to respect Google's AI rate limits...")
+            time.sleep(15) 
 
         except Exception as e:
             print(f"Error processing a specific email from {sender}: {e}")
-            # If an email fails (like a rate limit), we pause for 10 seconds before trying the next one
-            time.sleep(10)
+            # If we hit the rate limit, force the script to wait a full minute before trying again.
+            print("Speed limit hit! Pausing for 60 seconds...")
+            time.sleep(60)
 
 from flask import Flask
 import threading
