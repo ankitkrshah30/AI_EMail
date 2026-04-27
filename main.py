@@ -137,7 +137,7 @@ def run_email_loop():
             print(f"An error occurred: {e}")
         
         print("Sleeping for 5 minutes...")
-        time.sleep(300)
+        time.sleep(30)
 
 if __name__ == '__main__':
     # Start the email checker in a background thread
