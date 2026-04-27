@@ -72,7 +72,7 @@ def check_emails_and_draft():
     service = get_gmail_service()
     
     # Search for Unread Emails in the Inbox
-    results = service.users().messages().list(userId='me', labelIds=['INBOX', 'UNREAD']).execute()
+    results = service.users().messages().list(userId='me', labelIds=['INBOX', 'UNREAD'], maxResults=5).execute()
     messages = results.get('messages', [])
 
     if not messages:
