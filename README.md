@@ -162,4 +162,4 @@ UptimeRobot will now "visit" your app every 5 minutes. Render will think you hav
 * **Why did it skip my test email?**
   Make sure your test email is marked as **Unread**. If you open it on your phone before the bot gets to it, the bot will ignore it. It also ignores anything containing the words "no-reply" or "newsletter".
 * **What AI model is this using?**
-  It is strictly coded to use `gemini-2.5-flash-lite`. This is Google's high-volume tier that allows you to process enough emails without hitting the strict "20 per day" limit placed on other models.
+  It is strictly coded to use `gemini-2.5-flash-lite`. This is Google's high-volume tier that allows you to process enough emails without hitting the strict "20 per day" limit placed on other models.....
